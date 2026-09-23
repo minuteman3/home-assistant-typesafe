@@ -200,6 +200,22 @@ class TypeSafeConversationEntity(
                 str(err),
             )
 
+        # Direct intent dispatch bypasses the built-in agent's response templates.
+        # Give Assist a confirmation without overwriting speech or query answers.
+        if (
+            not intent_response.speech
+            and intent_response.response_type is intent.IntentResponseType.ACTION_DONE
+        ):
+            if intent_response.failed_results:
+                speech = (
+                    "Done, but some devices could not be controlled."
+                    if intent_response.success_results
+                    else "Sorry, the devices could not be controlled."
+                )
+            else:
+                speech = "Done."
+            intent_response.async_set_speech(speech)
+
         return conversation.ConversationResult(
             response=intent_response,
             conversation_id=user_input.conversation_id,

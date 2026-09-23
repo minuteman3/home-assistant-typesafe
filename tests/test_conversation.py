@@ -77,6 +77,109 @@ async def test_process_turn_on_entity_high_confidence(
     assert intent_obj.slots["name"]["value"] == "Kitchen Lights"
 
 
+@pytest.mark.parametrize(
+    ("response_type", "existing_speech", "success_count", "failure_count", "expected"),
+    [
+        (intent.IntentResponseType.ACTION_DONE, None, 1, 0, "Done."),
+        (intent.IntentResponseType.ACTION_DONE, None, 0, 0, "Done."),
+        (
+            intent.IntentResponseType.ACTION_DONE,
+            None,
+            1,
+            1,
+            "Done, but some devices could not be controlled.",
+        ),
+        (
+            intent.IntentResponseType.ACTION_DONE,
+            None,
+            0,
+            1,
+            "Sorry, the devices could not be controlled.",
+        ),
+        (
+            intent.IntentResponseType.ACTION_DONE,
+            "Custom confirmation",
+            1,
+            0,
+            "Custom confirmation",
+        ),
+        (
+            intent.IntentResponseType.ERROR,
+            "Device unavailable",
+            0,
+            1,
+            "Device unavailable",
+        ),
+        (
+            intent.IntentResponseType.QUERY_ANSWER,
+            "It is 20 degrees",
+            0,
+            0,
+            "It is 20 degrees",
+        ),
+        (intent.IntentResponseType.QUERY_ANSWER, None, 0, 0, None),
+    ],
+)
+async def test_action_confirmation_speech(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_client: MockTypeSafeClient,
+    response_type: intent.IntentResponseType,
+    existing_speech: str | None,
+    success_count: int,
+    failure_count: int,
+    expected: str | None,
+) -> None:
+    """Raw action responses need speech; preserve handler speech and query results."""
+    response = intent.IntentResponse(language="en")
+    response.response_type = response_type
+    if response_type is intent.IntentResponseType.ERROR:
+        response.error_code = intent.IntentResponseErrorCode.FAILED_TO_HANDLE
+    if existing_speech is not None:
+        response.async_set_speech(existing_speech)
+    target = intent.IntentResponseTarget(
+        name="Kitchen Lights",
+        type=intent.IntentResponseTargetType.ENTITY,
+        id="light.kitchen_lights",
+    )
+    response.async_set_results([target] * success_count, [target] * failure_count)
+
+    class RawResponseHandler(intent.IntentHandler):
+        intent_type = "HassTurnOn"
+
+        async def async_handle(
+            self, intent_obj: intent.Intent
+        ) -> intent.IntentResponse:
+            return response
+
+    intent.async_register(hass, RawResponseHandler())
+    hass.states.async_set(
+        "light.kitchen_lights", "off", {"friendly_name": "Kitchen Lights"}
+    )
+    mock_client.set_answers(
+        {
+            "intent": {"choice": "HassTurnOn", "confidence": 0.95},
+            "target_entity": {"choice": "light.kitchen_lights", "confidence": 0.95},
+            "is_compound": {"noul": 0.01},
+        }
+    )
+    result = await conversation.async_converse(
+        hass=hass,
+        text="Turn on the kitchen lights",
+        conversation_id=None,
+        context=Context(),
+        agent_id=config_entry.entry_id,
+    )
+
+    assert result.response.response_type is response_type
+    assert len(result.response.success_results) == success_count
+    assert len(result.response.failed_results) == failure_count
+    if expected is None:
+        assert result.response.speech == {}
+    else:
+        assert result.response.speech["plain"]["speech"] == expected
+
+
 async def test_process_turn_off_entity_high_confidence(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,

@@ -52,6 +52,11 @@ To use TypeSafe for voice or text commands:
 2. Select your desired Assist pipeline.
 3. Set **Conversation agent** to **TypeSafe**.
 
+When an action handler returns no speech, TypeSafe supplies an English confirmation
+("Done."), or a warning if it reports failed targets. Existing handler speech is
+preserved. This fallback applies only to action responses; it does not render
+Home Assistant's localized response templates or supply missing query answers.
+
 ### Options
 
 Tune runtime thresholds and pipeline behavior in **Settings > Devices & Services > TypeSafe > Configure**:
