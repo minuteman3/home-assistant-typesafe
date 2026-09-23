@@ -18,7 +18,9 @@ from homeassistant.helpers import httpx_client, selector
 
 from .client import TypeSafeAuthError, TypeSafeClient, TypeSafeError
 from .const import (
+    API_BASE_URL,
     CONF_API_KEY,
+    CONF_BASE_URL,
     CONF_COMPOUND_THRESHOLD,
     CONF_CONFIDENCE_THRESHOLD,
     CONF_DOMAIN_FILTER_MODE,
@@ -54,6 +56,7 @@ class TypeSafeConfigFlow(ConfigFlow, domain=DOMAIN):
                 api_key=user_input[CONF_API_KEY],
                 http_client=http_client,
                 model=user_input.get(CONF_MODEL, DEFAULT_MODEL),
+                base_url=user_input.get(CONF_BASE_URL, API_BASE_URL),
             )
             try:
                 await client.async_validate_key()
@@ -72,6 +75,9 @@ class TypeSafeConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_API_KEY): selector.TextSelector(
                     selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
                 ),
+                vol.Optional(
+                    CONF_BASE_URL, default=API_BASE_URL
+                ): selector.TextSelector(),
                 vol.Optional(
                     CONF_MODEL, default=DEFAULT_MODEL
                 ): selector.TextSelector(),

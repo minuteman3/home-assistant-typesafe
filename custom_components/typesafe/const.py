@@ -6,6 +6,7 @@ DOMAIN: Final = "typesafe"
 
 # Configuration options
 CONF_API_KEY: Final = "api_key"
+CONF_BASE_URL: Final = "base_url"
 CONF_MODEL: Final = "model"
 CONF_CONFIDENCE_THRESHOLD: Final = "confidence_threshold"
 CONF_COMPOUND_THRESHOLD: Final = "compound_threshold"

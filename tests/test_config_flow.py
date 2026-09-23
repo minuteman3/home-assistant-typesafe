@@ -12,7 +12,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.typesafe.client import TypeSafeAuthError, TypeSafeError
 from custom_components.typesafe.const import (
+    API_BASE_URL,
     CONF_API_KEY,
+    CONF_BASE_URL,
     CONF_COMPOUND_THRESHOLD,
     CONF_CONFIDENCE_THRESHOLD,
     CONF_DOMAIN_FILTER_MODE,
@@ -52,7 +54,39 @@ async def test_user_flow_success(
     assert result2.get("title") == DEFAULT_NAME
     assert result2.get("data") == {
         CONF_API_KEY: "valid-api-key",
+        CONF_BASE_URL: API_BASE_URL,
         CONF_MODEL: "jev-latest",
+    }
+    assert len(mock_setup.mock_calls) == 1
+
+
+async def test_user_flow_custom_base_url(
+    hass: HomeAssistant,
+) -> None:
+    """Test the user flow stores a custom (e.g. self-hosted) base URL."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    assert result.get("type") is FlowResultType.FORM
+
+    with patch(
+        "custom_components.typesafe.async_setup_entry", return_value=True
+    ) as mock_setup:
+        result2 = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_API_KEY: "valid-api-key",
+                CONF_BASE_URL: "https://laya.example.com",
+                CONF_MODEL: "laya-latest",
+            },
+        )
+        await hass.async_block_till_done()
+
+    assert result2.get("type") is FlowResultType.CREATE_ENTRY
+    assert result2.get("data") == {
+        CONF_API_KEY: "valid-api-key",
+        CONF_BASE_URL: "https://laya.example.com",
+        CONF_MODEL: "laya-latest",
     }
     assert len(mock_setup.mock_calls) == 1
 

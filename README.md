@@ -41,6 +41,7 @@ When an utterance is processed through Assist, the `DecisionFlow` pipeline evalu
 Install the custom component into `custom_components/typesafe` and configure it via **Settings > Devices & Services > Add Integration > TypeSafe**:
 
 - **API Key** (`api_key`): Your TypeSafe API key.
+- **Base URL** (`base_url`): API endpoint to query. Defaults to the hosted TypeSafe API (`https://api.typesafe.ai`); point it at a self-hosted, JEV-compatible endpoint (e.g. a `laya.cpp` server) to keep inference local.
 - **Model** (`model`): TypeSafe model to query (defaults to `jev-latest`).
 
 ### Voice Assistant Setup

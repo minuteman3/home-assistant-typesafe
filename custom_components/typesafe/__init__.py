@@ -13,7 +13,9 @@ from homeassistant.helpers import httpx_client
 
 from .client import TypeSafeClient
 from .const import (
+    API_BASE_URL,
     CONF_API_KEY,
+    CONF_BASE_URL,
     CONF_COMPOUND_THRESHOLD,
     CONF_CONFIDENCE_THRESHOLD,
     CONF_DOMAIN_FILTER_MODE,
@@ -58,10 +60,16 @@ def create_flow_from_options(options: Mapping[str, Any]) -> DecisionFlow:
 async def async_setup_entry(hass: HomeAssistant, entry: TypeSafeConfigEntry) -> bool:
     """Set up a config entry."""
     api_key = entry.data[CONF_API_KEY]
+    base_url = entry.data.get(CONF_BASE_URL, API_BASE_URL)
     model = entry.data.get(CONF_MODEL, DEFAULT_MODEL)
 
     http_client = httpx_client.get_async_client(hass)
-    client = TypeSafeClient(api_key=api_key, http_client=http_client, model=model)
+    client = TypeSafeClient(
+        api_key=api_key,
+        http_client=http_client,
+        model=model,
+        base_url=base_url,
+    )
     engine = TypeSafeDecisionEngine(client=client)
     flow = create_flow_from_options(entry.options)
 
